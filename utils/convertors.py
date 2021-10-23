@@ -37,8 +37,8 @@ def req_bytes(n: int):
     return int(math.ceil(length / 8))
 
 
-# Converts Text to Binary
-def text_to_binary(text: str):
+# Converts Text to Bytes
+def text_to_bytes(text: str):
     length = len(text)
     text_bytes = bytearray(length)
 
@@ -48,8 +48,8 @@ def text_to_binary(text: str):
     return text_bytes
 
 
-# Converts Binary to Text
-def binary_to_text(byte_array: bytearray):
+# Converts Bytes to Text
+def bytes_to_text(byte_array: bytearray):
     result = ''
 
     for x in byte_array:
