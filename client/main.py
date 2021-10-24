@@ -30,7 +30,7 @@ class Client():
         self.server_random = None  # Server Random
         self.server_pubkey = 0  # Sever's PublicKey
 
-        # Read the Certificate
+        # Reading the Certificate
         self.cert = load_certificate('client/' + certificate_file)
 
     # Implements SSL Handshake to Setup connection with Server
@@ -161,7 +161,7 @@ class Client():
         # Extracting Session details from Message
         self.server_random = bytes_to_text(message[7:39])
         self.session_id = message[39:41]
-        self.certificate_reqired = (message[43] == 1)
+        self.certificate_reqired = (message[43] == ord('\x01'))
 
         # Extracting and Validating the Server certificate
         server_cert = crypto.load_certificate(
@@ -204,7 +204,7 @@ class Client():
 
         # Adding Header
         client_hello[0] = ord('\x01')
-        client_hello[1:5] = int_to_binary(120, 4)
+        client_hello[1:5] = int_to_binary(38, 4)
         client_hello[5] = ord('\x64')
         client_hello[6] = ord('\x65')
 
@@ -352,6 +352,6 @@ class Client():
         client_message_encrypted = encrypt_message(
             client_message_to_encrypt, self.master_secret)
 
-        # Get length of encrypted part, send concatenation of the two parts
+        # Combining the two parts
         client_message[1:5] = int_to_binary(len(client_message_encrypted), 4)
         self.connection.send(client_message + client_message_encrypted)
