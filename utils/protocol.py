@@ -1,3 +1,6 @@
+from utils.convertors import *
+import Crypto.PublicKey.RSA
+
 
 class Error_Codes():
     UNEXPECTED_MESSAGE_TYPE = 1
@@ -11,3 +14,30 @@ class Error_Codes():
     INCORRECT_LOGIN = 9
     BAD_ENCRYPTION = 10
     UNKNOWN_ERROR = 11
+
+
+class Client_Status():
+    SOCKET_CREATED = 'SOCKET_CREATED'
+    HELLO_SENT = 'HELLO_SENT'
+    HELLO_RECEIVED = 'HELLO_RECEIVED'
+    KEY_SENT = 'KEY_SENT'
+    ACK_RECEIVED = 'ACK_RECEIVED'
+    SETUP = 'SETUP'
+
+
+# Read the Certificate from file
+def load_certificate(certificate_file: str):
+    cert = ''
+    with open(certificate_file) as f:
+        cert = text_to_bytes(f.read())
+    return cert
+
+
+# Read the private Key from File
+def load_private_key(private_key_file: str):
+    key = ''
+    with open(private_key_file) as f:
+        key = Crypto.PublicKey.RSA.importKey(f.read())
+
+    print(key)
+    return key

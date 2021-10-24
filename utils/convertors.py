@@ -7,7 +7,7 @@ def int_to_binary(n: int, length: int):
 
     while length > 0:
         length -= 1
-        n_bytes[length] = int(n & 0xFF)
+        n_bytes[length] = int(n & 255)
         n >>= 8
 
     return n_bytes

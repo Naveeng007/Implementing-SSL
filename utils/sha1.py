@@ -120,6 +120,3 @@ def sha1(text: str) -> int:
     text_bin = text_to_binary(text)
     text_bin_padded = pad(text_bin)
     return main(text_bin_padded, hex_list)
-
-
-print(hex(sha1('abcd')))
