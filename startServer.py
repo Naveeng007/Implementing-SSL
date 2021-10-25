@@ -6,5 +6,5 @@ if __name__ == '__main__':
     server = Server('server.pem', 'server_prv.key')
 
     # Connecting to the Server
-    # server.add_account('project-client', 'Konklave123')
-    # server.start()
+    server.add_account('project-client', 'world')
+    server.start()

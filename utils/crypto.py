@@ -16,7 +16,7 @@ def encrypt_message(array, master_secret):
     aes = AES.new(digestToString(master_secret)[:16], AES.MODE_CBC, 16 * '\00')
 
     # Pad the array, encrypt it, and convert it to base64
-    return base64.b64encode(aes.encrypt(bytes(array + (16 - len(array)) % 16 * '\x00')))
+    return base64.b64encode(aes.encrypt(bytes(array + bytearray((16 - len(array)) % 16))))
 
 
 # Decrypts the message using a given master secret

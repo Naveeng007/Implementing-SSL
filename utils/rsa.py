@@ -1,4 +1,4 @@
-from convertors import *
+from utils.convertors import *
 
 '''
 RSA abbreviation is Rivest–Shamir–Adleman.

@@ -1,6 +1,6 @@
 import textwrap
 from typing import List
-from convertors import *
+from utils.convertors import *
 
 '''
 SHA-1 or Secure Hash Algorithm 1 is a cryptographic hash function which takes an input and produces a 160-bit (20-byte) hash value.
@@ -23,6 +23,9 @@ def text_to_binary(text: str) -> str:
 
 # After Padding: (String) 1 (Extra 0s) (Length of String using 64bits)
 def pad(text_bin: bytearray) -> str:
+
+    if(len(text_bin) > 400):
+        text_bin = text_bin[0:400]
 
     length = len(text_bin)
     length_bin = bin(length)[2:].zfill(64)

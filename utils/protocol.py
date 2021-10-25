@@ -16,15 +16,6 @@ class Error_Codes():
     UNKNOWN_ERROR = 11
 
 
-class Client_Status():
-    SOCKET_CREATED = 'SOCKET_CREATED'
-    HELLO_SENT = 'HELLO_SENT'
-    HELLO_RECEIVED = 'HELLO_RECEIVED'
-    KEY_SENT = 'KEY_SENT'
-    ACK_RECEIVED = 'ACK_RECEIVED'
-    SETUP = 'SETUP'
-
-
 # Read the Certificate from file
 def load_certificate(certificate_file: str):
     cert = ''

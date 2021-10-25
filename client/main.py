@@ -5,7 +5,7 @@ from OpenSSL import crypto
 import Crypto.PublicKey.RSA
 from utils.crypto import *
 from utils.convertors import binary_to_int, bytes_to_text, int_to_binary, req_bytes, text_to_bytes
-from utils.protocol import Error_Codes, load_certificate, Client_Status
+from utils.protocol import Error_Codes, load_certificate
 from utils import rsa, sha1
 import threading
 
@@ -34,15 +34,12 @@ class Client():
         self.cert = load_certificate('client/' + certificate_file)
 
     # Implements SSL Handshake to Setup connection with Server
-
     def connect(self, host, port):
         self.connection = socket.socket()
         self.connection.connect((host, port))
-        self.set_conn_status(Client_Status.SOCKET_CREATED)
 
         # Sending Hello Message to Server
         self.connection.send(self.create_hello())
-        self.set_conn_status(Client_Status.HELLO_SENT)
 
         # Receiving Hello Message from Server
         server_hello = self.receive_message()
@@ -50,7 +47,6 @@ class Client():
             return
 
         # Processing the Hello Message from Server
-        self.set_conn_status(Client_Status.HELLO_RECEIVED)
         error = self.process_hello(server_hello)
         if error:
             self.send_error(error)
@@ -58,7 +54,6 @@ class Client():
 
         # Sending Encrypted Session Key
         self.connection.send(self.create_key())
-        self.set_conn_status(Client_Status.KEY_SENT)
 
         # Receiving Acknowledgement from Server
         setup_ack = self.receive_message()
@@ -66,19 +61,17 @@ class Client():
             return
 
         # Processing the Acknowledgement from Server
-        self.set_conn_status(Client_Status.ACK_RECEIVED)
         error = self.process_ack(setup_ack)
         if error:
             self.send_error(error)
             return
 
         # Connection Setup
-        self.set_conn_status(Client_Status.SETUP)
         self.is_connected = True
 
         # Starting the Payload listener
         listen_thread = threading.Thread(
-            target=self.payload_listener, args=(self.connection,))
+            target=self.payload_listener, args=())
         listen_thread.start()
 
     # Receive incoming message and Add to Buffer
@@ -116,6 +109,8 @@ class Client():
 
     # Send an Error Message to Server and Close the connection
     def send_error(self, error_code):
+        print("Error Occurred with Code:", error_code)
+
         error_message = bytearray(10)
 
         # Adding Header
@@ -129,7 +124,7 @@ class Client():
             error_message[5:7] = '\x00\x00'
 
         # Adding Error Code
-        error_message[7] = int_to_binary(error_code, 1)
+        error_message[7:8] = int_to_binary(error_code, 1)
 
         # Adding Footer
         error_message[8] = ord('\xF0')
@@ -143,6 +138,7 @@ class Client():
 
     # Process Server Hello Message
     def process_hello(self, message):
+        print("Processing Server Hello Message...")
 
         # Message Validations
         if len(message) != 1249:
@@ -166,17 +162,18 @@ class Client():
         # Extracting and Validating the Server certificate
         server_cert = crypto.load_certificate(
             crypto.FILETYPE_PEM, bytes_to_text(message[44:1247]))
-        if server_cert.get_issuer().commonName != 'orion' or server_cert.has_expired():
+        if server_cert.get_issuer().commonName != 'orion':
             return Error_Codes.INCORRECT_SERVER_CERTIFICATE
 
         # Extracting the Server's PublicKey
         self.server_pubkey = Crypto.PublicKey.RSA.importKey(
-            M2Crypto.X509.load_cert_string(message[44:1247]).get_pubkey().as_der())
+            M2Crypto.X509.load_cert_string(bytes_to_text(message[44:1247])).get_pubkey().as_der())
 
         return None
 
     # Process Acknowledgement
     def process_ack(self, message):
+        print("Processing the Acknowledgement from Server...")
 
         # Message Validations
         try:
@@ -200,6 +197,7 @@ class Client():
 
     # Create Client Hello Message to initiate connection with Server
     def create_hello(self):
+        print("Sending Client Hello...")
         client_hello = bytearray(43)
 
         # Adding Header
@@ -209,10 +207,10 @@ class Client():
         client_hello[6] = ord('\x65')
 
         # Generating Random Bytes
-        client_random = ''
+        self.client_random = ''
         for _ in range(7, 39):
-            client_random += chr(rn.randint(0, 255))
-        client_hello[7:39] = text_to_bytes(client_random)
+            self.client_random += chr(rn.randint(0, 255))
+        client_hello[7:39] = text_to_bytes(self.client_random)
 
         # Adding Footer
         client_hello[39] = ord('\x00')
@@ -224,6 +222,7 @@ class Client():
 
     # Create a Session Key packet
     def create_key(self):
+        print("Creating Client key...")
 
         # Generating Pre-Master
         pre_master = ''
@@ -249,7 +248,7 @@ class Client():
                            key_length] = int_to_binary(pre_master_encrypt, key_length)
 
         # Adding User Credentials
-        user_credentials = sha1.sha1(self.userID + self.password)
+        user_credentials = sha1.sha1(self.username + self.password)
         user_credentials2 = sha1.sha1(digestToString(
             user_credentials) + self.server_random)
         client_key_message[1212 + key_length:1232 +
@@ -272,17 +271,15 @@ class Client():
 
     # Close the existing connection
     def disconnect(self):
+        print("Disconnecting from Server...")
+
         if self.connection is not None:
             self.is_connected = False
             self.connection.close()
 
-    # Set and Print the current Connection Status
-    def set_conn_status(self, status):
-        self.conn_status = status
-        print(self.conn_status)
-
     # Start listening for, processing and replying to payload messages
-    def payload_listener(self, conn):
+    def payload_listener(self):
+        print("Started the Payload Listener...")
 
         while True:
             if not self.is_connected:
@@ -300,6 +297,7 @@ class Client():
 
     # Process incoming payload
     def process_payload(self, message):
+        print("Processing the Payload received from Server...")
 
         # Message Validations
         try:
@@ -332,6 +330,8 @@ class Client():
 
     # Send a payload to the server
     def send_payload(self, payload):
+        print("Sending the Payload to the Server:", payload)
+
         length = len(payload)
         if length > 4294967200:
             return
@@ -347,6 +347,8 @@ class Client():
         client_message_to_encrypt[6:6 + length] = payload
         client_message_to_encrypt[-1] = ord('\xF0')
         client_message_to_encrypt[-2] = ord('\xF0')
+
+        print(client_message_to_encrypt)
 
         # Encrypting the Message
         client_message_encrypted = encrypt_message(

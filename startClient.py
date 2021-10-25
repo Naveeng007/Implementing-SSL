@@ -1,11 +1,17 @@
 from client.main import Client
+from utils.convertors import text_to_bytes
 
 
 if __name__ == '__main__':
     # Creating the Client instance
-    client = Client('client.pem', 'hello', 'world')
+    client = Client('client.pem', 'project-client', 'world')
 
     # Connecting to the Server
-    # client.connect('localhost', 8310)
+    error = client.connect('localhost', 8310)
 
-    client.create_hello()
+    if not error:
+        payload = 'Hello World'
+        payload = text_to_bytes(payload)
+
+        client.send_payload(payload)
+        client.disconnect()
